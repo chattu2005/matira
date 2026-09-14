@@ -1,0 +1,219 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered customer profile on MATIRA",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Firebase Auth user UID" },
+        "email": { "type": "string", "description": "Customer email" },
+        "displayName": { "type": "string", "description": "Customer name" },
+        "phoneNumber": { "type": "string", "description": "Customer phone" },
+        "role": { "type": "string", "enum": ["customer", "admin"], "description": "User role" },
+        "createdAt": { "type": "string", "description": "ISO creation timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO update timestamp" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator registry for server-side & Firestore rule verification",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "Admin email address" },
+        "role": { "type": "string", "description": "Admin role identifier" },
+        "addedAt": { "type": "string", "description": "Timestamp when admin privilege was configured" }
+      },
+      "required": ["email", "role"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category in MATIRA catalogue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique category ID" },
+        "name": { "type": "string", "description": "Category title" },
+        "slug": { "type": "string", "description": "URL slug" },
+        "description": { "type": "string", "description": "Category summary" },
+        "image": { "type": "string", "description": "Category banner or thumbnail URL" },
+        "displayOrder": { "type": "number", "description": "Sorting priority" },
+        "isActive": { "type": "boolean", "description": "Whether category is active" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Update timestamp" }
+      },
+      "required": ["id", "name", "slug", "isActive"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Real grocery & spices product in MATIRA store",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product ID" },
+        "name": { "type": "string", "description": "Product name" },
+        "slug": { "type": "string", "description": "URL slug" },
+        "categoryId": { "type": "string", "description": "Parent category ID" },
+        "categoryName": { "type": "string", "description": "Category display name" },
+        "shortDescription": { "type": "string", "description": "Concise summary for cards" },
+        "fullDescription": { "type": "string", "description": "Full rich description" },
+        "images": { "type": "string", "description": "Array of image URLs encoded as JSON string or array" },
+        "price": { "type": "number", "description": "Selling price in INR" },
+        "compareAtPrice": { "type": "number", "description": "Original MRP before discount" },
+        "discountPercentage": { "type": "number", "description": "Discount percentage" },
+        "weight": { "type": "string", "description": "Weight or pack size e.g. 1 kg, 500g" },
+        "sku": { "type": "string", "description": "Stock Keeping Unit" },
+        "stockQuantity": { "type": "number", "description": "Available inventory count" },
+        "stockStatus": { "type": "string", "enum": ["in_stock", "low_stock", "out_of_stock"], "description": "Inventory status" },
+        "isFeatured": { "type": "boolean", "description": "Featured on homepage" },
+        "isBestSeller": { "type": "boolean", "description": "Marked as bestseller" },
+        "isNew": { "type": "boolean", "description": "Marked as newly arrived" },
+        "isActive": { "type": "boolean", "description": "Active for sale" },
+        "ingredients": { "type": "string", "description": "Pure ingredients list" },
+        "benefits": { "type": "string", "description": "Health & culinary benefits" },
+        "storageInfo": { "type": "string", "description": "Storage instructions" },
+        "usageInfo": { "type": "string", "description": "Recommended usage" },
+        "shippingInfo": { "type": "string", "description": "Shipping guidelines" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Update timestamp" }
+      },
+      "required": ["id", "name", "slug", "price", "stockQuantity", "isActive"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order in MATIRA",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique order ID" },
+        "orderNumber": { "type": "string", "description": "Human readable order number e.g. MAT-1001" },
+        "customerId": { "type": "string", "description": "Firebase Auth user UID" },
+        "customerName": { "type": "string", "description": "Customer name" },
+        "customerEmail": { "type": "string", "description": "Notification email" },
+        "customerPhone": { "type": "string", "description": "Contact phone" },
+        "deliveryAddress": { "type": "object", "description": "Structured delivery address" },
+        "items": { "type": "array", "description": "Ordered products snapshot" },
+        "subtotal": { "type": "number", "description": "Item subtotal" },
+        "discount": { "type": "number", "description": "Discount applied" },
+        "shipping": { "type": "number", "description": "Shipping fee" },
+        "total": { "type": "number", "description": "Final payable total" },
+        "paymentMethod": { "type": "string", "enum": ["cod", "online_gateway", "upi"], "description": "Selected payment method" },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid", "failed"], "description": "Payment status" },
+        "orderStatus": { "type": "string", "enum": ["Pending", "Confirmed", "Processing", "Packed", "Shipped", "Delivered", "Cancelled"], "description": "Current order state" },
+        "couponCode": { "type": "string", "description": "Applied coupon if any" },
+        "statusTimeline": { "type": "array", "description": "Chronological order timeline" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "orderNumber", "customerId", "customerEmail", "items", "total", "orderStatus"]
+    },
+    "Address": {
+      "title": "Address",
+      "description": "Saved customer delivery address",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Address ID" },
+        "customerId": { "type": "string", "description": "Owner user UID" },
+        "fullName": { "type": "string", "description": "Recipient name" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "addressLine": { "type": "string", "description": "Street / road name" },
+        "apartment": { "type": "string", "description": "Flat / house number" },
+        "landmark": { "type": "string", "description": "Nearby landmark" },
+        "city": { "type": "string", "description": "City" },
+        "state": { "type": "string", "description": "State" },
+        "pinCode": { "type": "string", "description": "Postal PIN Code" },
+        "country": { "type": "string", "description": "Country (India)" },
+        "isDefault": { "type": "boolean", "description": "Whether this is default address" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Update timestamp" }
+      },
+      "required": ["id", "customerId", "fullName", "phone", "addressLine", "city", "state", "pinCode"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Discount coupon code",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Coupon ID" },
+        "code": { "type": "string", "description": "Uppercase coupon code" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"], "description": "Discount calculation type" },
+        "discountValue": { "type": "number", "description": "Percentage or fixed amount" },
+        "minOrderValue": { "type": "number", "description": "Minimum subtotal required" },
+        "maxDiscount": { "type": "number", "description": "Cap on discount amount" },
+        "expiryDate": { "type": "string", "description": "Expiry timestamp" },
+        "usageLimit": { "type": "number", "description": "Total allowable uses" },
+        "timesUsed": { "type": "number", "description": "Current times used" },
+        "isActive": { "type": "boolean", "description": "Whether coupon is active" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["id", "code", "discountType", "discountValue", "isActive"]
+    },
+    "SiteContent": {
+      "title": "SiteContent",
+      "description": "Dynamic editable site content & store configurations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Configuration identifier e.g. home_settings" },
+        "announcementText": { "type": "string", "description": "Top bar announcement text" },
+        "heroHeading": { "type": "string", "description": "Hero title" },
+        "heroSubheading": { "type": "string", "description": "Hero supporting text" },
+        "contactPhone": { "type": "string", "description": "Store phone number" },
+        "contactEmail": { "type": "string", "description": "Store contact email" },
+        "contactAddress": { "type": "string", "description": "Store business address" },
+        "whatsappNumber": { "type": "string", "description": "Store WhatsApp number" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" }
+      },
+      "required": ["id"]
+    },
+    "NotificationLog": {
+      "title": "NotificationLog",
+      "description": "Log of email and WhatsApp notification attempts for orders",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Notification log ID" },
+        "orderId": { "type": "string", "description": "Associated order ID" },
+        "type": { "type": "string", "enum": ["email_customer", "email_admin", "whatsapp_customer", "whatsapp_admin"], "description": "Notification channel and target" },
+        "recipient": { "type": "string", "description": "Target email or phone number" },
+        "status": { "type": "string", "enum": ["sent", "failed", "unconfigured"], "description": "Delivery status" },
+        "error": { "type": "string", "description": "Error details if failed" },
+        "sentAt": { "type": "string", "description": "Timestamp" }
+      },
+      "required": ["id", "orderId", "type", "status", "sentAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Customer profiles and account data"
+    },
+    "/admins/{adminUid}": {
+      "schema": "Admin",
+      "description": "Authorized administrators registry"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Store product categories"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Real grocery and spices products"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer purchase orders"
+    },
+    "/addresses/{addressId}": {
+      "schema": "Address",
+      "description": "Customer shipping addresses"
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Discount coupon codes"
+    },
+    "/site_content/{contentId}": {
+      "schema": "SiteContent",
+      "description": "Store branding and configurable homepage sections"
+    },
+    "/order_notifications/{notificationId}": {
+      "schema": "NotificationLog",
+      "description": "Audit records of email and WhatsApp dispatch"
+    }
+  }
+}

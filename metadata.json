@@ -1,0 +1,6 @@
+{
+  "name": "MATIRA — Pure Indian Grocery & Spices",
+  "description": "Production e-commerce website for MATIRA Natural Foods offering pure Indian grocery, premium spices, edible oils, honey, pulses, and natural foods.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
