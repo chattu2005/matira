@@ -20,7 +20,8 @@ import { ProductCard } from '../components/ProductCard';
 interface ProductDetailViewProps {
   product: Product;
   allProducts: Product[];
-  onBack: () => void;
+  onBack?: () => void;
+  onNavigateBack?: () => void;
   onSelectProduct: (product: Product) => void;
   onNavigateToCheckout: () => void;
 }
@@ -29,9 +30,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   product,
   allProducts,
   onBack,
+  onNavigateBack,
   onSelectProduct,
   onNavigateToCheckout
 }) => {
+  const handleBackClick = () => {
+    if (onBack) onBack();
+    else if (onNavigateBack) onNavigateBack();
+  };
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 

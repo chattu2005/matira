@@ -15,6 +15,8 @@ function apiServerPlugin(): Plugin {
 
 export default defineConfig(() => {
   return {
+    // Relative base path ensures assets resolve correctly on GitHub Pages (https://<username>.github.io/<repo>/) and custom domains
+    base: process.env.VITE_BASE_PATH || './',
     plugins: [react(), tailwindcss(), apiServerPlugin()],
     resolve: {
       alias: {

@@ -101,7 +101,7 @@ export async function createOrder(params: {
   customerPhone: string;
   deliveryAddress: DeliveryAddress;
   items: CartItem[];
-  paymentMethod: 'cod' | 'online_gateway' | 'upi';
+  paymentMethod: 'cod' | 'online_gateway' | 'online' | 'upi';
   couponCode?: string;
 }): Promise<Order> {
   if (!params.items || params.items.length === 0) {

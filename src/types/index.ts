@@ -21,6 +21,8 @@ export interface Product {
   ingredients?: string;
   benefits?: string[];
   storageInfo?: string;
+  storageInstructions?: string;
+  description?: string;
   usageInfo?: string;
   shippingInfo?: string;
   createdAt?: string;

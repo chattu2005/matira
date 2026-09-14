@@ -6,18 +6,33 @@ import { ProductCard } from '../components/ProductCard';
 interface ShopViewProps {
   products: Product[];
   categories: Category[];
-  selectedCategory: string | null;
-  onSelectCategory: (catId: string | null) => void;
+  selectedCategory?: string | null;
+  initialCategory?: string | null;
+  onSelectCategory?: (catId: string | null) => void;
   onSelectProduct: (product: Product) => void;
 }
 
 export const ShopView: React.FC<ShopViewProps> = ({
   products,
   categories,
-  selectedCategory,
+  selectedCategory: externalSelectedCategory,
+  initialCategory,
   onSelectCategory,
   onSelectProduct
 }) => {
+  const [internalSelectedCategory, setInternalSelectedCategory] = useState<string | null>(
+    externalSelectedCategory !== undefined ? externalSelectedCategory : (initialCategory || null)
+  );
+
+  const activeCategory = externalSelectedCategory !== undefined ? externalSelectedCategory : internalSelectedCategory;
+
+  const handleCategorySelect = (catId: string | null) => {
+    setInternalSelectedCategory(catId);
+    if (onSelectCategory) {
+      onSelectCategory(catId);
+    }
+  };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'bestseller' | 'name'>('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -26,7 +41,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       // Category filter
-      if (selectedCategory && p.categoryId !== selectedCategory) {
+      if (activeCategory && p.categoryId !== activeCategory) {
         return false;
       }
       // Stock filter
@@ -57,7 +72,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
     });
-  }, [products, selectedCategory, inStockOnly, priceRange, searchTerm, sortBy]);
+  }, [products, activeCategory, inStockOnly, priceRange, searchTerm, sortBy]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -92,9 +107,9 @@ export const ShopView: React.FC<ShopViewProps> = ({
         {/* Category Horizontal Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pt-6 pb-2 no-scrollbar">
           <button
-            onClick={() => onSelectCategory(null)}
+            onClick={() => handleCategorySelect(null)}
             className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedCategory === null
+              activeCategory === null
                 ? 'bg-[#1A362B] text-white shadow-sm'
                 : 'bg-white border border-[#E7E2D9] text-[#57534E] hover:border-[#1A362B]'
             }`}
@@ -104,9 +119,9 @@ export const ShopView: React.FC<ShopViewProps> = ({
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => onSelectCategory(cat.id)}
+              onClick={() => handleCategorySelect(cat.id)}
               className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                selectedCategory === cat.id
+                activeCategory === cat.id
                   ? 'bg-[#1A362B] text-white shadow-sm'
                   : 'bg-white border border-[#E7E2D9] text-[#57534E] hover:border-[#1A362B]'
               }`}
