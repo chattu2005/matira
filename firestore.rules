@@ -83,9 +83,11 @@ service cloud.firestore {
       allow write: if isAdmin() || (isSignedIn() && request.auth.token.email == 'chattu1904@gmail.com');
     }
 
-    // Notification Logs: Admins can inspect email/whatsapp audit logs
+    // Notification Logs: Admins can inspect email/whatsapp audit logs; system/client can log order events
     match /order_notifications/{notificationId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
   }
 }

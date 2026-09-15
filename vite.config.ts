@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import express from 'express';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
 import { apiRouter } from './src/server/api';
@@ -8,7 +9,10 @@ function apiServerPlugin(): Plugin {
   return {
     name: 'matira-api-server',
     configureServer(server) {
-      server.middlewares.use('/api', apiRouter);
+      const apiApp = express();
+      apiApp.use(express.json());
+      apiApp.use(apiRouter);
+      server.middlewares.use('/api', apiApp);
     }
   };
 }

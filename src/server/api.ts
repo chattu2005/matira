@@ -57,69 +57,132 @@ apiRouter.post('/coupons/validate', (req: Request, res: Response) => {
   res.json({ valid: false, error: 'Invalid or expired coupon code' });
 });
 
-// Server-side notification dispatcher (Bird Email & WhatsApp Cloud API)
+// Server-side notification dispatcher (Mailjet, Bird Email & WhatsApp Cloud API)
 apiRouter.post('/notifications/dispatch', async (req: Request, res: Response) => {
-  const { order, type } = req.body;
-  
-  if (!order || !order.id) {
-    res.status(400).json({ success: false, error: 'Missing order details' });
-    return;
+  try {
+    const { order, type } = req.body;
+    
+    if (!order || !order.id) {
+      res.status(400).json({ success: false, error: 'Missing order details' });
+      return;
+    }
+
+    const mailjetKey = process.env.MAILJET_API_KEY;
+    const mailjetSecret = process.env.MAILJET_SECRET_KEY;
+    const emailApiKey = process.env.EMAIL_SERVICE_API_KEY;
+    const emailFrom = process.env.EMAIL_FROM || 'orders@matira.in';
+    const adminNotificationEmail = process.env.EMAIL_NOTIFICATION_TO || BUSINESS_INFO.adminEmail;
+    const whatsappToken = process.env.WHATSAPP_API_TOKEN;
+    const whatsappPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+    const results: {
+      customerEmail?: { status: string; error?: string };
+      adminEmail?: { status: string; error?: string };
+      adminWhatsApp?: { status: string; error?: string };
+    } = {};
+
+    const emailHtml = generateOrderEmailHtml(order, type || 'confirmation');
+    const adminEmailHtml = generateOrderEmailHtml(order, 'admin_alert');
+
+  // Helper to send email via Mailjet v3.1
+  const sendViaMailjet = async (toEmail: string, toName: string, subject: string, html: string) => {
+    const authHeader = 'Basic ' + Buffer.from(`${mailjetKey}:${mailjetSecret}`).toString('base64');
+    const res = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: { Email: emailFrom, Name: 'MATIRA Pure Indian Grocery & Spices' },
+            To: [{ Email: toEmail, Name: toName }],
+            Subject: subject,
+            HTMLPart: html
+          }
+        ]
+      })
+    });
+    return res;
+  };
+
+  // 1. Send customer email (Mailjet or Bird)
+  if (order.customerEmail) {
+    if (mailjetKey && mailjetSecret) {
+      try {
+        const mjRes = await sendViaMailjet(
+          order.customerEmail,
+          order.customerName || 'Customer',
+          `MATIRA Order ${order.orderNumber} Confirmation`,
+          emailHtml
+        );
+        if (mjRes.ok) {
+          results.customerEmail = { status: 'sent' };
+        } else {
+          const errText = await mjRes.text();
+          results.customerEmail = { status: 'failed', error: errText };
+        }
+      } catch (e: any) {
+        results.customerEmail = { status: 'failed', error: e.message };
+      }
+    } else if (emailApiKey) {
+      try {
+        const birdRes = await fetch('https://api.bird.com/workspaces/current/channels/email/messages', {
+          method: 'POST',
+          headers: {
+            'Authorization': `AccessKey ${emailApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            receiver: { contacts: [{ identifierValue: order.customerEmail }] },
+            body: {
+              type: 'html',
+              html: {
+                text: emailHtml,
+                subject: `MATIRA Order ${order.orderNumber} Confirmation`
+              }
+            },
+            from: emailFrom
+          })
+        });
+        if (birdRes.ok) {
+          results.customerEmail = { status: 'sent' };
+        } else {
+          const errText = await birdRes.text();
+          results.customerEmail = { status: 'failed', error: errText };
+        }
+      } catch (e: any) {
+        results.customerEmail = { status: 'failed', error: e.message };
+      }
+    } else {
+      results.customerEmail = {
+        status: 'unconfigured',
+        error: 'MAILJET_API_KEY/SECRET or EMAIL_SERVICE_API_KEY not set (optional)'
+      };
+    }
   }
 
-  const emailApiKey = process.env.EMAIL_SERVICE_API_KEY;
-  const emailFrom = process.env.EMAIL_FROM || 'orders@matira.in';
-  const whatsappToken = process.env.WHATSAPP_API_TOKEN;
-  const whatsappPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-  const results: {
-    customerEmail?: { status: string; error?: string };
-    adminEmail?: { status: string; error?: string };
-    adminWhatsApp?: { status: string; error?: string };
-  } = {};
-
-  // 1. Send customer email via Bird if configured
-  if (emailApiKey && order.customerEmail) {
+  // 2. Send admin alert email (Mailjet or Bird)
+  if (mailjetKey && mailjetSecret) {
     try {
-      const emailHtml = generateOrderEmailHtml(order, type || 'confirmation');
-      const birdRes = await fetch('https://api.bird.com/workspaces/current/channels/email/messages', {
-        method: 'POST',
-        headers: {
-          'Authorization': `AccessKey ${emailApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          receiver: { contacts: [{ identifierValue: order.customerEmail }] },
-          body: {
-            type: 'html',
-            html: {
-              text: emailHtml,
-              subject: `MATIRA Order ${order.orderNumber} Confirmation`
-            }
-          },
-          from: emailFrom
-        })
-      });
-
-      if (birdRes.ok) {
-        results.customerEmail = { status: 'sent' };
+      const mjAdminRes = await sendViaMailjet(
+        adminNotificationEmail,
+        'MATIRA Store Admin',
+        `[ADMIN ALERT] New MATIRA Order ${order.orderNumber} (₹${order.total})`,
+        adminEmailHtml
+      );
+      if (mjAdminRes.ok) {
+        results.adminEmail = { status: 'sent' };
       } else {
-        const errText = await birdRes.text();
-        results.customerEmail = { status: 'failed', error: errText };
+        const errText = await mjAdminRes.text();
+        results.adminEmail = { status: 'failed', error: errText };
       }
     } catch (e: any) {
-      results.customerEmail = { status: 'failed', error: e.message };
+      results.adminEmail = { status: 'failed', error: e.message };
     }
-  } else {
-    results.customerEmail = {
-      status: 'unconfigured',
-      error: 'EMAIL_SERVICE_API_KEY not set in environment'
-    };
-  }
-
-  // 2. Send admin alert email to chattu1904@gmail.com via Bird
-  if (emailApiKey) {
+  } else if (emailApiKey) {
     try {
-      const adminEmailHtml = generateOrderEmailHtml(order, 'admin_alert');
       const birdAdminRes = await fetch('https://api.bird.com/workspaces/current/channels/email/messages', {
         method: 'POST',
         headers: {
@@ -127,7 +190,7 @@ apiRouter.post('/notifications/dispatch', async (req: Request, res: Response) =>
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          receiver: { contacts: [{ identifierValue: BUSINESS_INFO.adminEmail }] },
+          receiver: { contacts: [{ identifierValue: adminNotificationEmail }] },
           body: {
             type: 'html',
             html: {
@@ -151,7 +214,7 @@ apiRouter.post('/notifications/dispatch', async (req: Request, res: Response) =>
   } else {
     results.adminEmail = {
       status: 'unconfigured',
-      error: 'EMAIL_SERVICE_API_KEY not set in environment'
+      error: 'MAILJET_API_KEY/SECRET or EMAIL_SERVICE_API_KEY not set (optional)'
     };
   }
 
@@ -190,13 +253,17 @@ apiRouter.post('/notifications/dispatch', async (req: Request, res: Response) =>
     };
   }
 
-  // Safe response: notification failures never crash the order!
-  res.json({
-    success: true,
-    orderId: order.id,
-    orderNumber: order.orderNumber,
-    notifications: results
-  });
+    // Safe response: notification failures never crash the order!
+    res.json({
+      success: true,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      notifications: results
+    });
+  } catch (err: any) {
+    console.error('[MATIRA Server] Notification dispatch handler error:', err);
+    res.status(500).json({ success: false, error: err?.message || 'Notification dispatch error' });
+  }
 });
 
 // Admin verification endpoint

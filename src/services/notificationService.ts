@@ -105,23 +105,23 @@ export function generateOrderEmailHtml(order: Order, type: 'confirmation' | 'sta
           <table style="width: 100%; font-size: 14px; color: #44403C;">
             <tr>
               <td style="padding: 4px 0;">Subtotal:</td>
-              <td style="padding: 4px 0; text-align: right;">₹${order.subtotal.toLocaleString('en-IN')}</td>
+              <td style="padding: 4px 0; text-align: right;">₹${(order.subtotal || order.total || 0).toLocaleString('en-IN')}</td>
             </tr>
             ${
-              order.discount > 0
+              (order.discount || 0) > 0
                 ? `<tr>
                     <td style="padding: 4px 0; color: #15803D;">Coupon Discount:</td>
-                    <td style="padding: 4px 0; text-align: right; color: #15803D;">-₹${order.discount.toLocaleString('en-IN')}</td>
+                    <td style="padding: 4px 0; text-align: right; color: #15803D;">-₹${(order.discount || 0).toLocaleString('en-IN')}</td>
                   </tr>`
                 : ''
             }
             <tr>
               <td style="padding: 4px 0;">Delivery / Shipping:</td>
-              <td style="padding: 4px 0; text-align: right;">${order.shipping === 0 ? '<span style="color: #15803D;">FREE</span>' : `₹${order.shipping}`}</td>
+              <td style="padding: 4px 0; text-align: right;">${(order.shipping || 0) === 0 ? '<span style="color: #15803D;">FREE</span>' : `₹${order.shipping}`}</td>
             </tr>
             <tr style="font-size: 16px; font-weight: 700; color: #1A362B; border-top: 1px solid #E7E2D9;">
               <td style="padding: 12px 0 4px 0;">Grand Total:</td>
-              <td style="padding: 12px 0 4px 0; text-align: right;">₹${order.total.toLocaleString('en-IN')}</td>
+              <td style="padding: 12px 0 4px 0; text-align: right;">₹${(order.total || 0).toLocaleString('en-IN')}</td>
             </tr>
           </table>
         </div>
@@ -130,11 +130,11 @@ export function generateOrderEmailHtml(order: Order, type: 'confirmation' | 'sta
         <div style="background: #FAF8F5; border: 1px solid #E7E2D9; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
           <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #1A362B;">Delivery Address</h4>
           <p style="margin: 0; font-size: 13px; color: #57534E; line-height: 1.6;">
-            <strong>${order.deliveryAddress.fullName}</strong><br/>
-            ${order.deliveryAddress.apartment ? order.deliveryAddress.apartment + ', ' : ''}${order.deliveryAddress.addressLine}<br/>
-            ${order.deliveryAddress.landmark ? 'Landmark: ' + order.deliveryAddress.landmark + '<br/>' : ''}
-            ${order.deliveryAddress.city}, ${order.deliveryAddress.state} - ${order.deliveryAddress.pinCode}<br/>
-            Phone: ${order.deliveryAddress.phone}
+            <strong>${order.deliveryAddress?.fullName || order.customerName || 'Customer'}</strong><br/>
+            ${order.deliveryAddress?.apartment ? order.deliveryAddress.apartment + ', ' : ''}${order.deliveryAddress?.addressLine || ''}<br/>
+            ${order.deliveryAddress?.landmark ? 'Landmark: ' + order.deliveryAddress.landmark + '<br/>' : ''}
+            ${order.deliveryAddress?.city || ''}${order.deliveryAddress?.state ? ', ' + order.deliveryAddress.state : ''}${order.deliveryAddress?.pinCode ? ' - ' + order.deliveryAddress.pinCode : ''}<br/>
+            Phone: ${order.deliveryAddress?.phone || order.customerPhone || ''}
           </p>
         </div>
 
@@ -174,7 +174,7 @@ export async function dispatchOrderNotifications(order: Order, type: 'confirmati
     const res = await fetch('/api/notifications/dispatch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: order.id, type })
+      body: JSON.stringify({ order, orderId: order.id, type })
     });
     if (res.ok) {
       console.log(`[MATIRA] Server notification triggered successfully for order ${order.orderNumber}`);

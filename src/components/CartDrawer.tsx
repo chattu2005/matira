@@ -3,12 +3,18 @@ import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, Check, Truck } fr
 import { useCart } from '../context/CartContext';
 
 interface CartDrawerProps {
-  onNavigateToCheckout: () => void;
-  onNavigateToCart: () => void;
-  onNavigateToShop: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onCheckout?: () => void;
+  onNavigateToCheckout?: () => void;
+  onNavigateToCart?: () => void;
+  onNavigateToShop?: () => void;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
+  isOpen: propIsOpen,
+  onClose,
+  onCheckout,
   onNavigateToCheckout,
   onNavigateToCart,
   onNavigateToShop
@@ -31,10 +37,36 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setIsCartOpen
   } = useCart();
 
+  const isVisible = propIsOpen !== undefined ? propIsOpen : isCartOpen;
+
+  const handleClose = () => {
+    setIsCartOpen(false);
+    if (onClose) onClose();
+  };
+
+  const handleCheckout = () => {
+    handleClose();
+    if (onCheckout) {
+      onCheckout();
+    } else if (onNavigateToCheckout) {
+      onNavigateToCheckout();
+    }
+  };
+
+  const handleGoToShop = () => {
+    handleClose();
+    if (onNavigateToShop) onNavigateToShop();
+  };
+
+  const handleViewCart = () => {
+    handleClose();
+    if (onNavigateToCart) onNavigateToCart();
+  };
+
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
 
-  if (!isCartOpen) return null;
+  if (!isVisible) return null;
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +83,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-        onClick={() => setIsCartOpen(false)}
+        onClick={handleClose}
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
@@ -67,7 +99,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </span>
             </div>
             <button
-              onClick={() => setIsCartOpen(false)}
+              onClick={handleClose}
               className="p-1.5 text-[#78716C] hover:text-[#1C1917] rounded-full hover:bg-[#F5F2EB] transition-colors"
               id="close-cart-drawer-btn"
             >
@@ -115,10 +147,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </p>
                 </div>
                 <button
-                  onClick={() => {
-                    setIsCartOpen(false);
-                    onNavigateToShop();
-                  }}
+                  onClick={handleGoToShop}
                   className="px-5 py-2.5 bg-[#1A362B] text-white text-xs font-semibold rounded-xl hover:bg-[#2D5A47] transition-all shadow-sm"
                   id="drawer-shop-now-btn"
                 >
@@ -253,10 +282,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Checkout CTAs */}
               <div className="space-y-2 pt-1">
                 <button
-                  onClick={() => {
-                    setIsCartOpen(false);
-                    onNavigateToCheckout();
-                  }}
+                  onClick={handleCheckout}
                   className="w-full py-3 px-4 bg-[#1A362B] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#2D5A47] flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
                   id="drawer-proceed-checkout-btn"
                 >
@@ -264,10 +290,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => {
-                    setIsCartOpen(false);
-                    onNavigateToCart();
-                  }}
+                  onClick={handleViewCart}
                   className="w-full py-2 text-center text-xs font-medium text-[#57534E] hover:text-[#1A362B] transition-colors"
                   id="drawer-view-full-cart-btn"
                 >

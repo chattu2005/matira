@@ -5,6 +5,7 @@ interface FooterProps {
   onNavigate?: (view: string, param?: string) => void;
   onNavigateHome?: () => void;
   onNavigateShop?: (catId?: string) => void;
+  onNavigateCategories?: () => void;
   onNavigateAbout?: () => void;
   onNavigateContact?: () => void;
 }
@@ -13,6 +14,7 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigate,
   onNavigateHome,
   onNavigateShop,
+  onNavigateCategories,
   onNavigateAbout,
   onNavigateContact
 }) => {
@@ -25,6 +27,8 @@ export const Footer: React.FC<FooterProps> = ({
       onNavigateHome();
     } else if (view === 'shop' && onNavigateShop) {
       onNavigateShop(param);
+    } else if (view === 'categories' && onNavigateCategories) {
+      onNavigateCategories();
     } else if (view === 'about' && onNavigateAbout) {
       onNavigateAbout();
     } else if (view === 'contact' && onNavigateContact) {
